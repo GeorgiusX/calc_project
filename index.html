@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calc Notes</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/33.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <section class="numi-window">
+        <header class="window-bar">
+          <div class="window-logo" aria-hidden="true">
+            <img src="./assets/33.svg" alt="" class="window-logo-image">
+          </div>
+          <div id="activeNoteTitle" class="window-title">Numi</div>
+          <div class="window-actions">
+            <button id="newNoteBtn" class="icon-btn" type="button" aria-label="New note">+</button>
+            <button id="panelToggleBtn" class="icon-btn" type="button" aria-label="Toggle notes panel">≡</button>
+          </div>
+        </header>
+
+        <div class="window-body">
+          <div class="editor-layout">
+            <div id="gutter" class="gutter" aria-hidden="true"></div>
+            <div class="editor-stack">
+              <pre id="ghost" class="editor-ghost" aria-hidden="true"></pre>
+              <textarea
+                id="editor"
+                wrap="off"
+                spellcheck="false"
+                placeholder="tax = 21%&#10;price = 120 + tax&#10;20% of 45 + 3 USD to EUR"
+              ></textarea>
+            </div>
+            <section id="results" class="results-col" aria-label="Line results"></section>
+          </div>
+        </div>
+
+        <footer class="window-footer">
+          <div class="footer-left">
+            <button id="themeToggleBtn" class="ghost-btn" type="button">Theme</button>
+            <button id="copyResultsBtn" class="ghost-btn" type="button">Copy</button>
+            <button id="copyFormattedBtn" class="ghost-btn" type="button">Copy Lines</button>
+          </div>
+          <div class="footer-right">
+            <span id="statusText">Ready</span>
+            <span id="rateInfo"></span>
+          </div>
+        </footer>
+        <button id="resizeHandle" class="resize-handle" type="button" aria-label="Resize calculator"></button>
+      </section>
+
+      <aside id="sidePanel" class="side-panel is-hidden">
+        <div class="panel-section">
+          <div class="panel-heading">Notes</div>
+          <div id="notesList" class="notes-list" aria-label="Saved notes"></div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-heading">Actions</div>
+          <div class="panel-actions">
+            <button id="duplicateNoteBtn" class="panel-btn" type="button">Duplicate</button>
+            <button id="importBtn" class="panel-btn" type="button">Import</button>
+            <button id="exportBtn" class="panel-btn" type="button">Export</button>
+            <input id="fileInput" type="file" accept=".numi,.txt,text/plain" hidden>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-heading">Format</div>
+          <label class="precision-row" for="precisionInput">
+            <span>Precision</span>
+            <input id="precisionInput" class="precision-input" type="number" min="0" max="8" step="1" value="3">
+          </label>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-heading">Examples</div>
+          <div class="examples-list">
+            <button class="snippet-btn" data-snippet="discount = 15%&#10;price = 240 USD&#10;price - discount off price">percentages</button>
+            <button class="snippet-btn" data-snippet="3 km in m&#10;2 hours + 30 min&#10;1000 MB in GB">units</button>
+            <button class="snippet-btn" data-snippet="travel = 450 USD&#10;travel in EUR&#10;1 USD into UAH">currencies</button>
+            <button class="snippet-btn" data-snippet="today&#10;now in Tokyo&#10;fromunix(1700000000)">date &amp; time</button>
+            <button class="snippet-btn" data-snippet="item1 = 10 USD&#10;item2 = 20 USD&#10;sum&#10;average&#10;prev + 5 USD">rollups</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
