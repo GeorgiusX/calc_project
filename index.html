@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Calc Notes</title>
     <link rel="icon" type="image/svg+xml" href="./assets/33.svg">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=7">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -14,7 +14,7 @@
           <div class="window-logo" aria-hidden="true">
             <img src="./assets/33.svg" alt="" class="window-logo-image">
           </div>
-          <div id="activeNoteTitle" class="window-title">Numi</div>
+          <button id="activeNoteTitle" class="window-title window-title-btn" type="button" aria-label="Rename note">Untitled note</button>
           <div class="window-actions">
             <button id="newNoteBtn" class="icon-btn" type="button" aria-label="New note">+</button>
             <button id="panelToggleBtn" class="icon-btn" type="button" aria-label="Toggle notes panel">≡</button>
@@ -88,6 +88,6 @@
       </aside>
     </div>
 
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=5"></script>
   </body>
 </html>

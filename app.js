@@ -5,8 +5,8 @@ import {
   formatResult,
   parseDocument,
   renderGhostHtml,
-} from './lib/engine.js';
-import { StorageAdapter } from './lib/storage.js';
+} from './lib/engine.js?v=5';
+import { StorageAdapter } from './lib/storage.js?v=2';
 
 const editor = document.getElementById('editor');
 const numiWindow = document.querySelector('.numi-window');
@@ -37,6 +37,7 @@ const state = {
   precision: StorageAdapter.loadPrecision(),
   windowSize: StorageAdapter.loadWindowSize(),
   context: null,
+  isRenamingTitle: false,
 };
 
 const fxProvider = createFxRateProvider();
@@ -60,6 +61,12 @@ function getActiveNote() {
 
 function saveNotes() {
   StorageAdapter.saveNotes(state.notes);
+}
+
+function syncActiveNoteTitle() {
+  const active = getActiveNote();
+  if (!active || state.isRenamingTitle) return;
+  activeNoteTitle.textContent = active.title || 'Untitled note';
 }
 
 function renderNotesList() {
@@ -129,7 +136,7 @@ function deleteNote(noteId) {
   state.notes = state.notes.filter((note) => note.id !== noteId);
 
   if (!state.notes.length) {
-    const fallback = StorageAdapter.createNote('# Untitled\n');
+    const fallback = StorageAdapter.createNote('');
     state.notes = [fallback];
   }
 
@@ -193,7 +200,7 @@ function evaluateAndRender() {
   ghost.innerHTML = renderGhostHtml(documentModel, evaluated);
   renderGutter(documentModel.lines.length);
   renderResults(evaluated);
-  activeNoteTitle.textContent = active.title;
+  syncActiveNoteTitle();
   updateRateInfo();
   setStatus('Ready');
 }
@@ -212,10 +219,67 @@ function loadActiveNote() {
   if (!active) return;
   state.activeId = active.id;
   editor.value = active.content;
-  activeNoteTitle.textContent = active.title;
+  state.isRenamingTitle = false;
+  syncActiveNoteTitle();
   renderNotesList();
   evaluateAndRender();
   setPanelOpen(false);
+}
+
+function commitTitleRename(nextTitle) {
+  const active = getActiveNote();
+  if (!active) return;
+  const updated = StorageAdapter.renameNote(active, nextTitle);
+  state.notes = state.notes.map((note) => (note.id === active.id ? updated : note));
+  saveNotes();
+  renderNotesList();
+  state.isRenamingTitle = false;
+  syncActiveNoteTitle();
+}
+
+function cancelTitleRename() {
+  state.isRenamingTitle = false;
+  syncActiveNoteTitle();
+}
+
+function beginTitleRename() {
+  const active = getActiveNote();
+  if (!active || state.isRenamingTitle) return;
+  state.isRenamingTitle = true;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'window-title window-title-input';
+  input.value = active.title || 'Untitled note';
+  input.setAttribute('aria-label', 'Note title');
+
+  const finish = (save) => {
+    input.removeEventListener('blur', onBlur);
+    input.removeEventListener('keydown', onKeyDown);
+    input.replaceWith(activeNoteTitle);
+    if (save) {
+      commitTitleRename(input.value);
+    } else {
+      cancelTitleRename();
+    }
+  };
+
+  const onBlur = () => finish(true);
+  const onKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      finish(true);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      finish(false);
+    }
+  };
+
+  activeNoteTitle.replaceWith(input);
+  input.addEventListener('blur', onBlur);
+  input.addEventListener('keydown', onKeyDown);
+  input.focus();
+  input.select();
 }
 
 async function refreshFx() {
@@ -245,12 +309,15 @@ function appendSnippet(text) {
 }
 
 newNoteBtn.addEventListener('click', () => {
-  const note = StorageAdapter.createNote('# Untitled\n');
+  const note = StorageAdapter.createNote('');
   state.notes.unshift(note);
   state.activeId = note.id;
   saveNotes();
   loadActiveNote();
+  beginTitleRename();
 });
+
+activeNoteTitle.addEventListener('click', beginTitleRename);
 
 panelToggleBtn.addEventListener('click', (event) => {
   event.stopPropagation();
