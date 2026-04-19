@@ -5,7 +5,7 @@ import {
   formatResult,
   parseDocument,
   renderGhostHtml,
-} from './lib/engine.js?v=5';
+} from './lib/engine.js?v=9';
 import { StorageAdapter } from './lib/storage.js?v=2';
 
 const editor = document.getElementById('editor');
@@ -26,9 +26,13 @@ const fileInput = document.getElementById('fileInput');
 const exportBtn = document.getElementById('exportBtn');
 const copyResultsBtn = document.getElementById('copyResultsBtn');
 const copyFormattedBtn = document.getElementById('copyFormattedBtn');
+const libraryBtn = document.getElementById('libraryBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const precisionInput = document.getElementById('precisionInput');
 const resizeHandle = document.getElementById('resizeHandle');
+const libraryOverlay = document.getElementById('libraryOverlay');
+const libraryContent = document.getElementById('libraryContent');
+const libraryCloseBtn = document.getElementById('libraryCloseBtn');
 
 const state = {
   notes: StorageAdapter.loadNotes(),
@@ -41,6 +45,64 @@ const state = {
 };
 
 const fxProvider = createFxRateProvider();
+
+const LIBRARY_SECTIONS = [
+  {
+    title: 'Core Math',
+    summary: 'Basic arithmetic, parentheses, powers, modulo, binary/octal/hex numbers, and natural wording like plus/minus/times/divide.',
+    items: ['1 + 2 * 3', '(4 + 5) ^ 2', '10 mod 3', '0xff + 0b10', '20 plus 5'],
+  },
+  {
+    title: 'Variables',
+    summary: 'Save values with assignments, reuse them later, and rename notes separately from content.',
+    items: ['tax = 21%', 'price = 120 EUR', 'price + tax on price'],
+  },
+  {
+    title: 'Percentages',
+    summary: 'Percent of / on / off flows, plus percent comparisons.',
+    items: ['20% of 45', '5% on 30 EUR', '6% off 120 USD', '50 as a % of 200'],
+  },
+  {
+    title: 'Rollups',
+    summary: 'Use previous result and sum/average over the contiguous numeric block right above.',
+    items: ['item1 = 10 USD', 'item2 = 20 USD', 'sum', 'average', 'prev + 5 USD'],
+  },
+  {
+    title: 'Currencies',
+    summary: 'ISO codes and symbols work. Use to / in / into for conversion.',
+    items: ['10 USD to EUR', '€5 + 3', '1 USD into UAH', 'travel = 450 USD', 'travel in EUR'],
+  },
+  {
+    title: 'Date & Time',
+    summary: 'Ask for today/now/time, convert timezones, and use natural city-time phrasing.',
+    items: ['today', 'now in Tokyo', 'time in New York', 'New York time', 'fromunix(1700000000)'],
+  },
+  {
+    title: 'Lengths & Areas',
+    summary: 'Metric and imperial lengths plus many area aliases.',
+    items: ['3 km in m', '12 ft to cm', '1 acre to sq ft', '1 hectare to sq m', '100 sq ft to m2'],
+  },
+  {
+    title: 'Volume & Weight',
+    summary: 'Cooking volumes, cubic units, and common mass units.',
+    items: ['2 cups to ml', '1 gal to l', '3 stone to kg', '5 lb to oz', '1 m3 to ft3'],
+  },
+  {
+    title: 'Data & CSS Units',
+    summary: 'Data sizes and CSS unit conversion with px/pt/em/rem/pc.',
+    items: ['1000 MB in GB', '1 GiB to MiB', '24 pt to px', '2 rem to px', '48 px to pt'],
+  },
+  {
+    title: 'Supported Keywords',
+    summary: 'Useful built-ins and synonyms the parser understands.',
+    items: ['sum, total, average, avg, prev', 'now, time, today, fromunix()', 'plus, minus, times, divide, with, without', 'to, in, into, of, on, off'],
+  },
+  {
+    title: 'Timezone Aliases',
+    summary: 'Built-in city shortcuts in addition to standard IANA zones.',
+    items: ['New York, NYC, Boston, Miami, Toronto', 'Chicago, Dallas, Denver, Los Angeles, Seattle, Vancouver', 'London, Paris, Madrid, Berlin, Rome, Amsterdam, Zurich', 'Tokyo, Osaka, Seoul, Singapore, Dubai, Delhi, Mumbai, Hong Kong', 'Sydney, Melbourne, Brisbane, Auckland'],
+  },
+];
 
 function setTheme(theme) {
   document.documentElement.classList.toggle('theme-light', theme === 'light');
@@ -104,6 +166,28 @@ function escapeHtml(input) {
   return input.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 }
 
+function renderLibrary() {
+  libraryContent.innerHTML = LIBRARY_SECTIONS.map((section) => `
+    <section class="library-section">
+      <div class="panel-heading">${escapeHtml(section.title)}</div>
+      <p class="library-summary">${escapeHtml(section.summary)}</p>
+      <div class="library-examples">
+        ${section.items.map((item) => `
+          <div class="library-example">
+            <code class="library-code">${escapeHtml(item)}</code>
+            <button class="snippet-btn library-try-btn" type="button" data-snippet="${escapeHtml(item)}">Try</button>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+function setLibraryOpen(isOpen) {
+  libraryOverlay.classList.toggle('is-hidden', !isOpen);
+  libraryOverlay.setAttribute('aria-hidden', String(!isOpen));
+}
+
 function setPanelOpen(isOpen) {
   sidePanel.classList.toggle('is-hidden', !isOpen);
   panelToggleBtn.setAttribute('aria-expanded', String(isOpen));
@@ -145,7 +229,7 @@ function deleteNote(noteId) {
   }
 
   saveNotes();
-  loadActiveNote();
+  loadActiveNote({ keepPanelOpen: true });
 }
 
 function renderGutter(count) {
@@ -214,7 +298,7 @@ function persistEditor() {
   renderNotesList();
 }
 
-function loadActiveNote() {
+function loadActiveNote(options = {}) {
   const active = getActiveNote();
   if (!active) return;
   state.activeId = active.id;
@@ -223,7 +307,7 @@ function loadActiveNote() {
   syncActiveNoteTitle();
   renderNotesList();
   evaluateAndRender();
-  setPanelOpen(false);
+  setPanelOpen(!!options.keepPanelOpen);
 }
 
 function commitTitleRename(nextTitle) {
@@ -380,6 +464,9 @@ copyFormattedBtn.addEventListener('click', async () => {
   setStatus('Formatted note copied');
 });
 
+libraryBtn.addEventListener('click', () => setLibraryOpen(true));
+libraryCloseBtn.addEventListener('click', () => setLibraryOpen(false));
+
 themeToggleBtn.addEventListener('click', () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark'));
 
 precisionInput.addEventListener('input', () => {
@@ -450,19 +537,35 @@ for (const button of document.querySelectorAll('.snippet-btn')) {
   button.addEventListener('click', () => appendSnippet(button.dataset.snippet.replaceAll('&#10;', '\n')));
 }
 
+libraryContent.addEventListener('click', (event) => {
+  const button = event.target.closest('.library-try-btn');
+  if (!button) return;
+  appendSnippet(button.dataset.snippet);
+  setLibraryOpen(false);
+});
+
 document.addEventListener('click', (event) => {
   if (sidePanel.classList.contains('is-hidden')) return;
   if (sidePanel.contains(event.target) || panelToggleBtn.contains(event.target)) return;
   setPanelOpen(false);
 });
 
+libraryOverlay.addEventListener('click', (event) => {
+  if (event.target === libraryOverlay) setLibraryOpen(false);
+});
+
 sidePanel.addEventListener('click', (event) => {
   event.stopPropagation();
+});
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !libraryOverlay.classList.contains('is-hidden')) setLibraryOpen(false);
 });
 
 window.addEventListener('resize', applyWindowSize);
 
 applyStoredTheme();
+renderLibrary();
 state.activeId = state.notes[0]?.id || null;
 precisionInput.value = String(state.precision);
 setPanelOpen(false);
