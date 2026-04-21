@@ -73,6 +73,11 @@ const LIBRARY_SECTIONS = [
     items: ['10 USD to EUR', '€5 + 3', '1 USD into UAH', 'travel = 450 USD', 'travel in EUR'],
   },
   {
+    title: 'Crypto',
+    summary: 'Live prices from CoinGecko. Supports BTC, ETH, SOL, BNB, XRP, ADA, DOGE, AVAX, MATIC, LINK, UNI, USDT, USDC, LTC, TRX and more.',
+    items: ['0.5 BTC to USD', '1 ETH in EUR', '₿0.1 + 0.05 BTC', '100 USD to ETH', 'bag = 2 SOL', 'bag in USD'],
+  },
+  {
     title: 'Date & Time',
     summary: 'Ask for today/now/time, convert timezones, and use natural city-time phrasing.',
     items: ['today', 'now in Tokyo', 'time in New York', 'New York time', 'fromunix(1700000000)'],
