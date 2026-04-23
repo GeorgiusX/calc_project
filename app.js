@@ -262,6 +262,18 @@ function setStatus(text, options = {}) {
   statusText.classList.toggle('status-stale', !!options.stale);
 }
 
+function formatFxDate(fx) {
+  const ts = fx.fetchedAt || Date.now();
+  const d = new Date(ts);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (sameDay(d, today)) return 'today';
+  if (sameDay(d, yesterday)) return 'yesterday';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function updateRateInfo() {
   if (!state.fx?.rates) {
     rateInfo.textContent = '';
@@ -269,8 +281,7 @@ function updateRateInfo() {
   }
   const age = Date.now() - (state.fx.fetchedAt || 0);
   const stale = age > 1000 * 60 * 60 * 12;
-  const date = state.fx.date || new Date(state.fx.fetchedAt || Date.now()).toLocaleDateString();
-  rateInfo.textContent = `FX ${state.fx.base} · ${date}${stale ? ' · stale' : ''}`;
+  rateInfo.textContent = `FX · ${formatFxDate(state.fx)}${stale ? ' · stale' : ''}`;
 }
 
 function evaluateAndRender() {

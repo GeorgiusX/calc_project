@@ -354,7 +354,18 @@ body.is-resizing {
 
 .footer-right {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  gap: 8px;
+}
+
+#rateInfo {
+  opacity: 0.55;
+}
+
+#rateInfo:not(:empty)::before {
+  content: '·';
+  margin-right: 8px;
+  opacity: 0.4;
 }
 
 .ghost-header {
